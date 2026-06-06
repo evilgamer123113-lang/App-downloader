@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Together</title>
+    <style>
+        body { 
+            background: #121212; 
+            color: white; 
+            font-family: sans-serif; 
+            text-align: center; 
+            padding-top: 20px; 
+            margin: 0;
+        }
+        .controls { 
+            margin-bottom: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        input[type="text"] { 
+            padding: 12px; 
+            width: 40%; 
+            max-width: 400px; 
+            border-radius: 4px; 
+            border: 1px solid #333; 
+            background: #222; 
+            color: white; 
+        }
+        button { 
+            padding: 12px 24px; 
+            border-radius: 4px; 
+            border: none; 
+            background: #00adb5; 
+            color: white; 
+            cursor: pointer; 
+            font-weight: bold; 
+        }
+        button:hover { 
+            background: #007a80; 
+        }
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .player-container { 
+            width: 80%; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        video, iframe {
+            width: 100%;
+            height: 450px;
+            border: none;
+            display: block;
+        }
+        #statusMessage {
+            color: #00adb5;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: #ccc;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Movie Night Sync</h1>
+    
+    <div class="controls">
+        <input type="text" id="videoUrl" placeholder="Paste link (YouTube, .mp4, external link)...">
+        <button id="loadBtn">Load Link</button>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="useEmbed" checked>
+            <label for="useEmbed">Force Embed / Iframe Mode</label>
+        </div>
+
+        <div class="upload-btn-wrapper">
+            <button class="btn">Upload from PC</button>
+            <input type="file" id="fileInput" accept="video/*" />
+        </div>
+    </div>
+    <div id="statusMessage"></div>
+
+    <div class="player-container">
+        <video id="nativePlayer" controls preload="auto" style="display: none;"></video>
+        <iframe id="embedPlayer" src="" allowfullscreen style="display: block;"></iframe>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const videoUrlInput = document.getElementById('videoUrl');
+        const loadBtn = document.getElementById('loadBtn');
+        const fileInput = document.getElementById('fileInput');
+        const useEmbedCheckbox = document.getElementById('useEmbed');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        const nativePlayer = document.getElementById('nativePlayer');
+        const embedPlayer = document.getElementById('embedPlayer');
+        
+        let internalAction = false;
+
+        embedPlayer.src = "https://vjs.zencdn.net/v/oceans.mp4";
+
+        loadBtn.onclick = () => {
+            let url = videoUrlInput.value.trim();
+            if (url) {
+                url = encodeURI(url).replace(/%2520/g, '%20'); 
+                const embedMode = useEmbedCheckbox.checked;
+                
+                updatePlayerSource(url, embedMode);
+                socket.emit('changeVideo', { url: url, embed: embedMode });
+            }
+        };
+
+        // REWRITTEN: XHR architecture supporting multi-gigabyte uploads with a percentage tracker
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            statusMessage.style.color = "#00adb5";
+            statusMessage.innerText = "Preparing large file pipeline...";
+            
+            const formData = new FormData();
+            formData.append('videoFile', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload-video', true);
+
+            // Real-time network stream listener
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    statusMessage.innerText = `Uploading: ${percentComplete}% completed. Do not close this window.`;
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.url) {
+                        statusMessage.innerText = "Upload complete! Broadcaster synchronization live.";
+                        updatePlayerSource(data.url, false);
+                        socket.emit('changeVideo', { url: data.url, embed: false });
+                        setTimeout(() => { statusMessage.innerText = ""; }, 5000);
+                    }
+                } else {
+                    statusMessage.style.color = "#ff4a4a";
+                    statusMessage.innerText = `Upload rejected by server (Status: ${xhr.status}).`;
+                }
+            };
+
+            xhr.onerror = () => {
+                statusMessage.style.color = "#ff4a4a";
+                statusMessage.innerText = "Upload connection dropped. Verify server timeouts or local disk space.";
+            };
+
+            xhr.send(formData);
+        };
+
+        function updatePlayerSource(url, forceEmbed) {
+            internalAction = true;
+
+            if (forceEmbed) {
+                nativePlayer.pause();
+                nativePlayer.style.display = "none";
+                nativePlayer.src = "";
+                
+                embedPlayer.style.display = "block";
+                embedPlayer.src = url;
+                
+                internalAction = false;
+                return;
+            }
+
+            embedPlayer.style.display = "none";
+            embedPlayer.src = "";
+            
+            nativePlayer.style.display = "block";
+            nativePlayer.src = url;
+            nativePlayer.load();
+            
+            setTimeout(() => { internalAction = false; }, 1000);
+        }
+
+        nativePlayer.onplay = () => { if (!internalAction) socket.emit('playVideo', nativePlayer.currentTime); };
+        nativePlayer.onpause = () => { if (!internalAction) socket.emit('pauseVideo', nativePlayer.currentTime); };
+        nativePlayer.onseeked = () => { if (!internalAction) socket.emit('seekVideo', nativePlayer.currentTime); };
+
+        socket.on('userChangedVideo', (data) => {
+            if (data && typeof data === 'object') {
+                updatePlayerSource(data.url, data.embed);
+            }
+        });
+
+        socket.on('userPlayed', (time) => {
+            if (nativePlayer.style.display === "none") return;
+            internalAction = true;
+            if (Math.abs(nativePlayer.currentTime - time) > 0.1) nativePlayer.currentTime = time;
+            nativePlayer.play().then(() => { internalAction = false; }).catch(() => { internalAction = false; });
+        });
+
+        socket.on('userPaused', (time) => {
+            if (nativePlayer.style.display === "none") return;
+            internalAction = true;
+            nativePlayer.pause();
+            nativePlayer.currentTime = time;
+            setTimeout(() => { internalAction = false; }, 200);
+        });
+
+        socket.on('userSeeked', (time) => {
+            if (nativePlayer.style.display === "none") return;
+            internalAction = true;
+            nativePlayer.currentTime = time;
+            setTimeout(() => { internalAction = false; }, 400);
+        });
+
+        socket.on('requestCurrentState', (requesterId) => {
+            const isEmbed = (embedPlayer.style.display === "block");
+            socket.emit('replyWithState', {
+                to: requesterId,
+                url: isEmbed ? embedPlayer.src : nativePlayer.src,
+                time: isEmbed ? 0 : nativePlayer.currentTime,
+                paused: isEmbed ? true : nativePlayer.paused,
+                embed: isEmbed
+            });
+        });
+
+        socket.on('forceFirstTimeSync', (state) => {
+            if (state.url) {
+                updatePlayerSource(state.url, state.embed);
+            }
+            if (state.embed) return;
+            internalAction = true;
+            nativePlayer.currentTime = state.time;
+            if (!state.paused) {
+                nativePlayer.play().then(() => { internalAction = false; }).catch(() => { internalAction = false; });
+            } else {
+                nativePlayer.pause();
+                internalAction = false;
+            }
+        });
+    </script>
+</body>
+</html>
