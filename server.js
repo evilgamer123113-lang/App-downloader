@@ -4,18 +4,15 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 const path = require('path');
 
-// No more public folder requirement. Serves index.html from your root directory.
+// Serves index.html straight from your main root directory
 app.use(express.static(__dirname));
 
-// Stream movie assets straight from your local /uploads folder directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Simple fallback route to serve your cinema main page properly
+// Route handling to explicitly send index.html when landing on the homepage
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// WebSockets Watch-Party Syncer Core Logic
+// WebSockets Sync Core
 io.on('connection', (socket) => {
     socket.broadcast.emit('requestCurrentState', socket.id);
 
@@ -37,8 +34,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-const server = http.listen(PORT, () => {
+http.listen(PORT, () => {
     console.log(`Server executing at port ${PORT}`);
 });
-
-server.timeout = 1800000;
