@@ -3,264 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch Together</title>
+    <title>Cinema Room - Laila Majnu</title>
     <style>
-        body { 
-            background: #121212; 
-            color: white; 
-            font-family: sans-serif; 
-            text-align: center; 
-            padding-top: 20px; 
-            margin: 0;
+        :root {
+            --primary: #00adb5;
+            --primary-hover: #00fff6;
+            --bg-gradient: linear-gradient(135deg, #0f0f12 0%, #1a1a24 100%);
+            --panel-bg: rgba(30, 30, 42, 0.6);
+            --border: rgba(255, 255, 255, 0.08);
         }
-        .controls { 
-            margin-bottom: 20px; 
+
+        body { 
+            background: #0f0f12;
+            background: var(--bg-gradient);
+            color: #f5f5fa; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            text-align: center; 
+            padding: 40px 20px; 
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .header-container {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin: 0 0 8px 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            color: var(--primary);
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(0, 173, 181, 0.4);
+        }
+
+        .audio-booster-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 12px;
+            width: fit-content;
+            margin: 0 auto 25px auto;
             display: flex;
-            justify-content: center;
             align-items: center;
             gap: 15px;
-            flex-wrap: wrap;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        input[type="text"] { 
-            padding: 12px; 
-            width: 40%; 
-            max-width: 400px; 
-            border-radius: 4px; 
-            border: 1px solid #333; 
-            background: #222; 
-            color: white; 
+
+        .audio-booster-panel label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #b0b0c0;
         }
-        button { 
-            padding: 12px 24px; 
-            border-radius: 4px; 
-            border: none; 
-            background: #00adb5; 
-            color: white; 
-            cursor: pointer; 
-            font-weight: bold; 
+
+        .audio-booster-panel input[type="range"] {
+            -webkit-appearance: none;
+            width: 160px;
+            height: 6px;
+            background: #2a2a3a;
+            border-radius: 5px;
+            outline: none;
         }
-        button:hover { 
-            background: #007a80; 
-        }
-        .upload-btn-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-        .upload-btn-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
+
+        .audio-booster-panel input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
             cursor: pointer;
+            transition: background 0.15s ease;
         }
-        .player-container { 
-            width: 80%; 
-            max-width: 800px; 
-            margin: 20px auto; 
-            background: #000;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+
+        .audio-booster-panel input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--primary-hover);
         }
-        video, iframe {
-            width: 100%;
-            height: 450px;
-            border: none;
-            display: block;
-        }
-        #statusMessage {
-            color: #00adb5;
+
+        .boost-value {
+            font-family: monospace;
             font-weight: bold;
-            margin-top: 5px;
-            font-size: 14px;
+            color: var(--primary-hover);
+            min-width: 45px;
+            text-align: left;
         }
-        .checkbox-container {
+
+        .player-wrapper { 
+            width: 100%;
+            max-width: 960px; 
+            margin: 0 auto; 
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 
+                        0 0 40px rgba(0, 173, 181, 0.15);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            max-height: 560px;
+            display: block;
+            outline: none;
+        }
+
+        .unmute-banner {
+            background: rgba(0, 173, 181, 0.2);
+            color: #ffffff;
+            padding: 14px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            display: none;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 960px;
+            margin: 0 auto 25px auto;
+            box-sizing: border-box;
+            border: 1px solid var(--primary);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 173, 181, 0.1);
+            animation: pulse 2s infinite;
+            font-size: 1rem;
+        }
+
+        .unmute-banner span {
+            color: var(--primary-hover);
+            text-decoration: underline;
+            margin-left: 5px;
+        }
+
+        .skip-alert {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            color: #ccc;
-            user-select: none;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .skip-left { left: 15%; }
+        .skip-right { right: 15%; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .subtitle { font-size: 0.9rem; }
+            body { padding: 20px 10px; }
         }
     </style>
 </head>
 <body>
 
-    <h1>Movie Night Sync</h1>
-    
-    <div class="controls">
-        <input type="text" id="videoUrl" placeholder="Paste link (YouTube, .mp4, external link)...">
-        <button id="loadBtn">Load Link</button>
-        
-        <div class="checkbox-container">
-            <input type="checkbox" id="useEmbed" checked>
-            <label for="useEmbed">Force Embed / Iframe Mode</label>
-        </div>
-
-        <div class="upload-btn-wrapper">
-            <button class="btn">Upload from PC</button>
-            <input type="file" id="fileInput" accept="video/*" />
-        </div>
+    <div class="header-container">
+        <h1>Cinema Room</h1>
+        <div class="subtitle">🎬 Now Playing: Laila Majnu</div>
     </div>
-    <div id="statusMessage"></div>
 
-    <div class="player-container">
-        <video id="nativePlayer" controls preload="auto" style="display: none;"></video>
-        <iframe id="embedPlayer" src="" allowfullscreen style="display: block;"></iframe>
+    <div class="audio-booster-panel">
+        <label for="gainSlider">🔊 Audio Amplifier Level:</label>
+        <input type="range" id="gainSlider" min="1" max="10" step="0.1" value="1">
+        <span class="boost-value" id="boostValue">100%</span>
+    </div>
+
+    <div id="unmuteBanner" class="unmute-banner" onclick="unmuteLiveStream()">
+        🔊 Audio is temporarily muted to bypass browser blocks. <span>Click here to enable sound!</span>
+    </div>
+
+    <div class="player-wrapper" id="playerWrapper">
+        <div id="skipLeftAlert" class="skip-alert skip-left">◀◀ 5s</div>
+        <div id="skipRightAlert" class="skip-alert skip-right">5s ▶▶</div>
+        
+        <video id="nativePlayer" controls preload="auto" src="/uploads/Laila Majnu [Hindi]-1080p.mp4" crossorigin="anonymous"></video>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
-        const videoUrlInput = document.getElementById('videoUrl');
-        const loadBtn = document.getElementById('loadBtn');
-        const fileInput = document.getElementById('fileInput');
-        const useEmbedCheckbox = document.getElementById('useEmbed');
-        const statusMessage = document.getElementById('statusMessage');
-        
         const nativePlayer = document.getElementById('nativePlayer');
-        const embedPlayer = document.getElementById('embedPlayer');
+        const playerWrapper = document.getElementById('playerWrapper');
+        const unmuteBanner = document.getElementById('unmuteBanner');
+        const skipLeftAlert = document.getElementById('skipLeftAlert');
+        const skipRightAlert = document.getElementById('skipRightAlert');
+        const gainSlider = document.getElementById('gainSlider');
+        const boostValue = document.getElementById('boostValue');
         
         let internalAction = false;
+        let seekTimeout;
 
-        embedPlayer.src = "https://vjs.zencdn.net/v/oceans.mp4";
+        let audioCtx = null;
+        let gainNode = null;
+        let sourceNode = null;
 
-        loadBtn.onclick = () => {
-            let url = videoUrlInput.value.trim();
-            if (url) {
-                url = encodeURI(url).replace(/%2520/g, '%20'); 
-                const embedMode = useEmbedCheckbox.checked;
+        function initAudioAmplifier() {
+            if (audioCtx) return; 
+            
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioCtx.createGain();
+                sourceNode = audioCtx.createMediaElementSource(nativePlayer);
                 
-                updatePlayerSource(url, embedMode);
-                socket.emit('changeVideo', { url: url, embed: embedMode });
+                sourceNode.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                gainNode.gain.value = parseFloat(gainSlider.value);
+            } catch (err) {
+                console.error("Audio Context initialization blocked by browser layout controls", err);
             }
-        };
-
-        // REWRITTEN: XHR architecture supporting multi-gigabyte uploads with a percentage tracker
-        fileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            statusMessage.style.color = "#00adb5";
-            statusMessage.innerText = "Preparing large file pipeline...";
-            
-            const formData = new FormData();
-            formData.append('videoFile', file);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/upload-video', true);
-
-            // Real-time network stream listener
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    statusMessage.innerText = `Uploading: ${percentComplete}% completed. Do not close this window.`;
-                }
-            };
-
-            xhr.onload = () => {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.url) {
-                        statusMessage.innerText = "Upload complete! Broadcaster synchronization live.";
-                        updatePlayerSource(data.url, false);
-                        socket.emit('changeVideo', { url: data.url, embed: false });
-                        setTimeout(() => { statusMessage.innerText = ""; }, 5000);
-                    }
-                } else {
-                    statusMessage.style.color = "#ff4a4a";
-                    statusMessage.innerText = `Upload rejected by server (Status: ${xhr.status}).`;
-                }
-            };
-
-            xhr.onerror = () => {
-                statusMessage.style.color = "#ff4a4a";
-                statusMessage.innerText = "Upload connection dropped. Verify server timeouts or local disk space.";
-            };
-
-            xhr.send(formData);
-        };
-
-        function updatePlayerSource(url, forceEmbed) {
-            internalAction = true;
-
-            if (forceEmbed) {
-                nativePlayer.pause();
-                nativePlayer.style.display = "none";
-                nativePlayer.src = "";
-                
-                embedPlayer.style.display = "block";
-                embedPlayer.src = url;
-                
-                internalAction = false;
-                return;
-            }
-
-            embedPlayer.style.display = "none";
-            embedPlayer.src = "";
-            
-            nativePlayer.style.display = "block";
-            nativePlayer.src = url;
-            nativePlayer.load();
-            
-            setTimeout(() => { internalAction = false; }, 1000);
         }
 
-        nativePlayer.onplay = () => { if (!internalAction) socket.emit('playVideo', nativePlayer.currentTime); };
-        nativePlayer.onpause = () => { if (!internalAction) socket.emit('pauseVideo', nativePlayer.currentTime); };
-        nativePlayer.onseeked = () => { if (!internalAction) socket.emit('seekVideo', nativePlayer.currentTime); };
+        gainSlider.oninput = () => {
+            initAudioAmplifier(); 
+            const value = parseFloat(gainSlider.value);
+            boostValue.innerText = `${Math.round(value * 100)}%`;
+            if (gainNode) {
+                gainNode.gain.value = value;
+            }
+        };
 
-        socket.on('userChangedVideo', (data) => {
-            if (data && typeof data === 'object') {
-                updatePlayerSource(data.url, data.embed);
+        function unmuteLiveStream() {
+            nativePlayer.muted = false;
+            unmuteBanner.style.display = "none";
+            initAudioAmplifier(); 
+        }
+
+        nativePlayer.onplay = () => {
+            initAudioAmplifier();
+            if (!internalAction) {
+                socket.emit('playVideo', nativePlayer.currentTime);
+            }
+        };
+
+        function triggerSkipVisual(element) {
+            element.style.opacity = "1";
+            setTimeout(() => { element.style.opacity = "0"; }, 500);
+        }
+
+        playerWrapper.addEventListener('dblclick', (e) => {
+            e.preventDefault(); 
+            const rect = playerWrapper.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+
+            if (clickX > width / 2) {
+                let targetTime = Math.min(nativePlayer.duration, nativePlayer.currentTime + 5);
+                triggerSkipVisual(skipRightAlert);
+                executeManualSeek(targetTime);
+            } else {
+                let targetTime = Math.max(0, nativePlayer.currentTime - 5);
+                triggerSkipVisual(skipLeftAlert);
+                executeManualSeek(targetTime);
             }
         });
 
-        socket.on('userPlayed', (time) => {
-            if (nativePlayer.style.display === "none") return;
+        nativePlayer.addEventListener('dblclick', (e) => { e.preventDefault(); });
+
+        nativePlayer.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight") {
+                e.preventDefault();
+                e.stopPropagation();
+                let targetTime = Math.min(nativePlayer.duration, nativePlayer.currentTime + 5);
+                triggerSkipVisual(skipRightAlert);
+                executeManualSeek(targetTime);
+            } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                e.stopPropagation();
+                let targetTime = Math.max(0, nativePlayer.currentTime - 5);
+                triggerSkipVisual(skipLeftAlert);
+                executeManualSeek(targetTime);
+            } else if (e.key === " ") { 
+                e.preventDefault();
+                e.stopPropagation();
+                if (nativePlayer.paused) {
+                    nativePlayer.play();
+                } else {
+                    nativePlayer.pause();
+                }
+            }
+        }, true); 
+
+        function executeManualSeek(targetTime) {
             internalAction = true;
-            if (Math.abs(nativePlayer.currentTime - time) > 0.1) nativePlayer.currentTime = time;
-            nativePlayer.play().then(() => { internalAction = false; }).catch(() => { internalAction = false; });
+            nativePlayer.currentTime = targetTime;
+            
+            clearTimeout(seekTimeout);
+            seekTimeout = setTimeout(() => {
+                socket.emit('seekVideo', targetTime);
+                internalAction = false;
+            }, 50);
+        }
+
+        nativePlayer.onpause = () => { 
+            if (!internalAction) {
+                socket.emit('pauseVideo', nativePlayer.currentTime);
+            }
+        };
+
+        nativePlayer.onseeking = () => { 
+            if (!internalAction) {
+                clearTimeout(seekTimeout);
+                seekTimeout = setTimeout(() => {
+                    socket.emit('seekVideo', nativePlayer.currentTime);
+                }, 30); 
+            }
+        };
+
+        socket.on('userPlayed', (time) => {
+            internalAction = true;
+            nativePlayer.currentTime = time; 
+            nativePlayer.play().finally(() => { 
+                internalAction = false; 
+            });
         });
 
         socket.on('userPaused', (time) => {
-            if (nativePlayer.style.display === "none") return;
             internalAction = true;
             nativePlayer.pause();
-            nativePlayer.currentTime = time;
-            setTimeout(() => { internalAction = false; }, 200);
+            nativePlayer.currentTime = time; 
+            setTimeout(() => { internalAction = false; }, 30);
         });
 
         socket.on('userSeeked', (time) => {
-            if (nativePlayer.style.display === "none") return;
             internalAction = true;
             nativePlayer.currentTime = time;
-            setTimeout(() => { internalAction = false; }, 400);
+            setTimeout(() => { internalAction = false; }, 30);
         });
 
         socket.on('requestCurrentState', (requesterId) => {
-            const isEmbed = (embedPlayer.style.display === "block");
             socket.emit('replyWithState', {
                 to: requesterId,
-                url: isEmbed ? embedPlayer.src : nativePlayer.src,
-                time: isEmbed ? 0 : nativePlayer.currentTime,
-                paused: isEmbed ? true : nativePlayer.paused,
-                embed: isEmbed
+                time: nativePlayer.currentTime,
+                paused: nativePlayer.paused
             });
         });
 
         socket.on('forceFirstTimeSync', (state) => {
-            if (state.url) {
-                updatePlayerSource(state.url, state.embed);
-            }
-            if (state.embed) return;
             internalAction = true;
             nativePlayer.currentTime = state.time;
+            
             if (!state.paused) {
-                nativePlayer.play().then(() => { internalAction = false; }).catch(() => { internalAction = false; });
+                nativePlayer.muted = true; 
+                unmuteBanner.style.display = "block";
+                
+                nativePlayer.play().finally(() => {
+                    internalAction = false;
+                });
             } else {
                 nativePlayer.pause();
                 internalAction = false;
