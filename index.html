@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinema Room - Laila Majnu</title>
+    <title>Cinema Room - Stream</title>
     <style>
         :root {
             --primary: #00adb5;
@@ -185,7 +185,7 @@
 
     <div class="header-container">
         <h1>Cinema Room</h1>
-        <div class="subtitle">🎬 Now Playing: Laila Majnu</div>
+        <div class="subtitle">🎬 Now Streaming Live</div>
     </div>
 
     <div class="audio-booster-panel">
@@ -202,7 +202,7 @@
         <div id="skipLeftAlert" class="skip-alert skip-left">◀◀ 5s</div>
         <div id="skipRightAlert" class="skip-alert skip-right">5s ▶▶</div>
         
-        <video id="nativePlayer" controls preload="auto" src="/uploads/Laila Majnu [Hindi]-1080p.mp4" crossorigin="anonymous"></video>
+        <video id="nativePlayer" controls preload="auto" src="YOUR_DIRECT_MP4_URL_HERE" crossorigin="anonymous"></video>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -225,18 +225,15 @@
 
         function initAudioAmplifier() {
             if (audioCtx) return; 
-            
             try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 gainNode = audioCtx.createGain();
                 sourceNode = audioCtx.createMediaElementSource(nativePlayer);
-                
                 sourceNode.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
-                
                 gainNode.gain.value = parseFloat(gainSlider.value);
             } catch (err) {
-                console.error("Audio Context initialization blocked by browser layout controls", err);
+                console.error("Audio Context initialization blocked", err);
             }
         }
 
@@ -284,31 +281,19 @@
             }
         });
 
-        nativePlayer.addEventListener('dblclick', (e) => { e.preventDefault(); });
-
-        nativePlayer.addEventListener('keydown', (e) => {
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === " ") {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-
         window.addEventListener('keydown', (e) => {
             if (e.key === "ArrowRight") {
                 e.preventDefault();
-                e.stopPropagation();
                 let targetTime = Math.min(nativePlayer.duration, nativePlayer.currentTime + 5);
                 triggerSkipVisual(skipRightAlert);
                 executeManualSeek(targetTime);
             } else if (e.key === "ArrowLeft") {
                 e.preventDefault();
-                e.stopPropagation();
                 let targetTime = Math.max(0, nativePlayer.currentTime - 5);
                 triggerSkipVisual(skipLeftAlert);
                 executeManualSeek(targetTime);
             } else if (e.key === " ") { 
                 e.preventDefault();
-                e.stopPropagation();
                 if (nativePlayer.paused) {
                     nativePlayer.play();
                 } else {
@@ -320,7 +305,6 @@
         function executeManualSeek(targetTime) {
             internalAction = true;
             nativePlayer.currentTime = targetTime;
-            
             clearTimeout(seekTimeout);
             seekTimeout = setTimeout(() => {
                 socket.emit('seekVideo', targetTime);
@@ -375,11 +359,9 @@
         socket.on('forceFirstTimeSync', (state) => {
             internalAction = true;
             nativePlayer.currentTime = state.time;
-            
             if (!state.paused) {
                 nativePlayer.muted = true; 
                 unmuteBanner.style.display = "block";
-                
                 nativePlayer.play().finally(() => {
                     internalAction = false;
                 });
