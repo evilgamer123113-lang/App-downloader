@@ -4,19 +4,18 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 const path = require('path');
 
-// REMOVED THE PUBLIC FOLDER REQUIREMENT:
-// This serves index.html straight from your main root directory
+// No more public folder! Serve index.html right from the root directory
 app.use(express.static(__dirname));
 
-// Serve movies directly from the /uploads folder
+// Serve files directly out of your lowercase /uploads directory 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Route handling to explicitly send index.html if someone lands on the homepage
+// Fallback rule to send the homepage accurately
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// WebSockets Sync Core
+// WebSockets Core Logic
 io.on('connection', (socket) => {
     socket.broadcast.emit('requestCurrentState', socket.id);
 
@@ -42,5 +41,4 @@ const server = http.listen(PORT, () => {
     console.log(`Server executing at port ${PORT}`);
 });
 
-// Increase timeouts to prevent large movie streams from cutting off prematurely
 server.timeout = 1800000;
